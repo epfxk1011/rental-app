@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전동지게차 렌탈 미납 관리</title>
+<style>
+:root {
+  --teal-50:#E1F5EE; --teal-100:#9FE1CB; --teal-400:#1D9E75; --teal-600:#0F6E56;
+  --red-50:#FCEBEB; --red-200:#F09595; --red-400:#E24B4A; --red-600:#A32D2D; --red-800:#791F1F;
+  --amber-50:#FAEEDA; --amber-400:#BA7517; --amber-600:#854F0B;
+  --gray-50:#F8F8F6; --gray-100:#F1EFE8; --gray-200:#D3D1C7;
+  --gray-400:#888780; --gray-600:#5F5E5A; --gray-800:#2C2C2A;
+  --blue-50:#E6F1FB; --blue-600:#185FA5;
+  --font: 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --r: 10px; --rl: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:#F2F1ED;color:var(--gray-800);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* HEADER */
+.hd{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--gray-200);height:56px;display:flex;align-items:center;padding:0 24px;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:var(--teal-600)}
+.logo-box{width:32px;height:32px;background:var(--teal-400);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.hd-right{display:flex;align-items:center;gap:14px}
+.updated{font-size:12px;color:var(--gray-400)}
+.btn-ref{display:flex;align-items:center;gap:6px;padding:7px 15px;background:var(--teal-400);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-ref:hover{background:var(--teal-600)}
+.btn-ref:disabled{opacity:.55;cursor:not-allowed}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LAYOUT */
+.wrap{max-width:1460px;margin:0 auto;padding:20px 24px}
+
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.sum-card{background:#fff;border-radius:var(--rl);padding:16px 18px;border:1px solid var(--gray-200)}
+.sum-lbl{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.sum-val{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sum-val.ok{color:var(--teal-400)}
+.sum-val.warn{color:var(--amber-400)}
+.sum-val.danger{color:var(--red-400)}
+.sum-sub{font-size:11px;color:var(--gray-400);margin-top:4px}
+
+/* TABS */
+.tab-wrap{display:flex;gap:2px;background:var(--gray-100);border-radius:var(--r);padding:4px;width:fit-content;margin-bottom:14px}
+.tab{padding:7px 20px;border-radius:8px;border:none;background:none;font-size:13px;font-weight:500;color:var(--gray-600);cursor:pointer;transition:all .15s}
+.tab.on{background:#fff;color:var(--teal-600);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.09)}
+
+/* CONTROLS */
+.ctrl{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.search-wrap{position:relative;min-width:200px;max-width:300px;flex:1}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none}
+.search-inp{width:100%;padding:8px 10px 8px 30px;border:1px solid var(--gray-200);border-radius:var(--r);background:#fff;font-size:13px;color:var(--gray-800);outline:none}
+.search-inp:focus{border-color:var(--teal-400)}
+select{padding:8px 28px 8px 11px;border:1px solid var(--gray-200);border-radius:var(--r);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23888' d='M5 7L1 3h8z'/%3E%3C/svg%3E") no-repeat right 10px center;-webkit-appearance:none;font-size:13px;color:var(--gray-800);outline:none;cursor:pointer}
+.fl{font-size:12px;color:var(--gray-600);white-space:nowrap}
+.cnt{margin-left:auto;font-size:12px;color:var(--gray-400)}
+
+/* TABLE */
+.tbl-wrap{background:#fff;border-radius:var(--rl);border:1px solid var(--gray-200);overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{background:var(--gray-50);padding:10px 13px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--gray-800)}
+.sa{opacity:.3;margin-left:3px;font-size:10px}
+th.sorted .sa{opacity:1;color:var(--teal-400)}
+td{padding:11px 13px;border-bottom:1px solid var(--gray-100);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF8}
+
+.bdg{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.bdg-ok{background:var(--teal-50);color:var(--teal-600)}
+.bdg-warn{background:var(--amber-50);color:var(--amber-600)}
+.bdg-late{background:var(--red-50);color:var(--red-600)}
+.bdg-type{background:var(--gray-100);color:var(--gray-600)}
+.bdg-annual{background:var(--blue-50);color:var(--blue-600)}
+.unpaid-amt{font-weight:700;color:var(--red-400)}
+
+.btn-msg{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;background:none;border:1px solid var(--gray-200);border-radius:8px;font-size:12px;font-weight:500;color:var(--gray-600);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-msg:hover{border-color:var(--teal-400);color:var(--teal-600);background:var(--teal-50)}
+.btn-msg.red:hover{border-color:var(--red-400);color:var(--red-600);background:var(--red-50)}
+
+/* MODAL */
+.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;align-items:flex-start;justify-content:center;padding:50px 16px 40px;overflow-y:auto}
+.backdrop.open{display:flex}
+.modal{background:#fff;border-radius:var(--rl);width:600px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.16);flex-shrink:0}
+.mhd{padding:18px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between}
+.mhd h2{font-size:16px;font-weight:700}
+.mcl{width:28px;height:28px;border-radius:50%;border:none;background:var(--gray-100);color:var(--gray-600);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mcl:hover{background:var(--gray-200)}
+.mbody{padding:18px 22px}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--gray-50);border-radius:var(--r);padding:14px;margin-bottom:14px;border:1px solid var(--gray-200)}
+.info-item{display:flex;flex-direction:column;gap:3px}
+.ik{font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.04em}
+.iv{font-size:13px;font-weight:600}
+
+.unpaid-box{background:var(--red-50);border:1px solid #F7C1C1;border-radius:var(--r);padding:14px;margin-bottom:14px}
+.ubt{font-size:11px;font-weight:700;color:var(--red-600);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+.urow{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(240,149,149,.25)}
+.urow:last-of-type{border-bottom:none}
+.ul{font-size:13px;color:#993C1D}
+.ud{font-size:11px;color:#BA7517;margin-top:1px}
+.ua{font-size:14px;font-weight:700;color:var(--red-600)}
+.utotal{display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #F09595;margin-top:10px;padding-top:11px}
+.utl{font-size:14px;font-weight:700;color:var(--red-600)}
+.uta{font-size:22px;font-weight:800;color:var(--red-800)}
+
+.ok-box{background:var(--teal-50);border:1px solid var(--teal-100);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--teal-600);font-weight:600}
+.warn-box{background:var(--amber-50);border:1px solid #FAC775;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--amber-600)}
+
+.tpl-lbl{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;margin-top:14px}
+.tpl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tpl-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--gray-200);background:#fff;font-size:12px;font-weight:600;color:var(--gray-600);cursor:pointer;transition:all .15s}
+.tpl-btn:hover,.tpl-btn.on{background:var(--teal-50);border-color:var(--teal-400);color:var(--teal-600)}
+textarea{width:100%;min-height:185px;border:1px solid var(--gray-200);border-radius:var(--r);padding:12px;font-size:13px;font-family:var(--font);color:var(--gray-800);background:#fff;resize:vertical;line-height:1.65;outline:none}
+textarea:focus{border-color:var(--teal-400)}
+
+.mfooter{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--gray-100);background:var(--gray-50)}
+.btn-cancel{padding:8px 18px;border:1px solid var(--gray-200);border-radius:var(--r);background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-600)}
+.btn-copy{padding:8px 22px;background:var(--teal-400);border:none;border-radius:var(--r);font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:background .15s}
+.btn-copy:hover{background:var(--teal-600)}
+
+/* LOADING / EMPTY */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;gap:16px;color:var(--gray-400)}
+.loader{width:38px;height:38px;border:3px solid var(--gray-200);border-top-color:var(--teal-400);border-radius:50%;animation:spin .8s linear infinite}
+.empty{text-align:center;padding:3rem;color:var(--gray-400)}
+
+/* TOAST */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--gray-800);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .22s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ERROR */
+.err{background:var(--red-50);border:1px solid #F7C1C1;border-radius:var(--r);padding:14px 18px;margin-bottom:16px;color:var(--red-600);font-size:13px;line-height:1.6;display:none}
+.err.show{display:block}
+.err code{background:#fff;padding:2px 6px;border-radius:4px;font-size:12px;word-break:break-all}
+
+/* SETUP GUIDE */
+.setup{background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);padding:28px 32px;max-width:680px;margin:40px auto}
+.setup h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.setup-sub{color:var(--gray-600);margin-bottom:24px;font-size:14px}
+.step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+.step-num{width:26px;height:26px;background:var(--teal-400);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-body{flex:1}
+.step-title{font-weight:600;margin-bottom:3px}
+.step-desc{font-size:13px;color:var(--gray-600);line-height:1.6}
+.step-code{margin-top:6px;background:var(--gray-100);border-radius:6px;padding:8px 12px;font-size:12px;font-family:monospace;color:var(--gray-800);word-break:break-all}
+.url-input-wrap{display:flex;gap:8px;margin-top:20px}
+.url-input{flex:1;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--r);font-size:13px;outline:none}
+.url-input:focus{border-color:var(--teal-400)}
+.btn-connect{padding:10px 22px;background:var(--teal-400);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer}
+.btn-connect:hover{background:var(--teal-600)}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">
+    <div class="logo-box">🏗️</div>
+    전동지게차 렌탈 미납 관리
+  </div>
+  <div class="hd-right">
+    <span class="updated" id="updated">—</span>
+    <button class="btn-ref" id="btnRef" onclick="loadData()" style="display:none">
+      <span id="refIcon">↻</span> 새로고침
+    </button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="err" id="errBox"></div>
+
+  <!-- SETUP GUIDE (GAS URL 없을 때) -->
+  <div class="setup" id="setupGuide">
+    <h2>🔧 최초 설정 가이드</h2>
+    <div class="setup-sub">구글 앱스 스크립트 API URL을 등록하면 구글 시트와 실시간 연동됩니다.</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">구글 시트 열기 → 확장 프로그램 → Apps Script</div>
+        <div class="step-desc">상단 메뉴에서 <b>확장 프로그램 → Apps Script</b>를 클릭합니다.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Code.gs에 아래 코드 붙여넣기</div>
+        <div class="step-desc">기존 코드를 모두 지우고, <code>google-apps-script.js</code> 파일 내용을 전부 붙여넣은 뒤 저장(Ctrl+S)합니다.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">배포 → 새 배포</div>
+        <div class="step-desc">
+          • 유형: <b>웹 앱</b><br>
+          • 다음 사용자로 실행: <b>나 (내 계정)</b><br>
+          • 액세스 권한: <b>모든 사용자</b><br>
+          → 배포 후 <b>웹 앱 URL</b> 복사
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">아래에 URL 붙여넣기</div>
+        <div class="step-desc">복사한 URL을 입력하고 연결하면 완료입니다.</div>
+      </div>
+    </div>
+
+    <div class="url-input-wrap">
+      <input class="url-input" id="gasUrlInput" type="text" placeholder="https://script.google.com/macros/s/...../exec">
+      <button class="btn-connect" onclick="connectGAS()">연결하기</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appSection" style="display:none">
+    <div class="sum-grid" id="sumGrid">
+      <div class="sum-card"><div class="sum-lbl">전체 렌탈</div><div class="sum-val" id="sTotal">—</div><div class="sum-sub">건</div></div>
+      <div class="sum-card"><div class="sum-lbl">정상 납부</div><div class="sum-val ok" id="sOk">—</div><div class="sum-sub">건</div></div>
+      <div class="sum-card"><div class="sum-lbl">확인 필요</div><div class="sum-val warn" id="sWarn">—</div><div class="sum-sub">건</div></div>
+      <div class="sum-card"><div class="sum-lbl">미납 의심</div><div class="sum-val danger" id="sLate">—</div><div class="sum-sub">건</div></div>
+      <div class="sum-card"><div class="sum-lbl">추정 미납 합계</div><div class="sum-val danger" id="sTotalW" style="font-size:17px">—</div><div class="sum-sub">원</div></div>
+    </div>
+
+    <div class="tab-wrap" id="tabWrap"></div>
+
+    <div class="ctrl">
+      <div class="search-wrap">
+        <span class="si">🔍</span>
+        <input class="search-inp" id="searchInp" type="text" placeholder="업체명, 연락처 검색...">
+      </div>
+      <span class="fl">상태</span>
+      <select id="fStatus">
+        <option value="all">전체</option>
+        <option value="late">미납의심</option>
+        <option value="warn">확인필요</option>
+        <option value="ok">정상</option>
+      </select>
+      <span class="fl">구분</span>
+      <select id="fType">
+        <option value="all">전체</option>
+        <option value="장기">장기</option>
+        <option value="단기">단기</option>
+        <option value="연납">연납</option>
+      </select>
+      <span class="cnt" id="cnt"></span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:55px" onclick="srt('구분')">구분<span class="sa" id="sa-구분">▾</span></th>
+          <th style="width:175px" onclick="srt('업체')">업체명<span class="sa" id="sa-업체">▾</span></th>
+          <th style="width:118px">연락처</th>
+          <th style="width:80px" onclick="srt('금액')">월금액<span class="sa" id="sa-금액">▾</span></th>
+          <th style="width:82px">결제현황</th>
+          <th style="width:98px" onclick="srt('결제일')">마지막결제<span class="sa" id="sa-결제일">▾</span></th>
+          <th style="width:70px" onclick="srt('status')">상태<span class="sa" id="sa-status">▾</span></th>
+          <th style="width:125px" onclick="srt('미납')">추정미납액<span class="sa" id="sa-미납">▾</span></th>
+          <th style="width:95px">문자생성</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="loading" id="loadingEl" style="display:none">
+      <div class="loader"></div>
+      <div>구글 시트에서 데이터를 불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="backdrop" id="backdrop">
+  <div class="modal">
+    <div class="mhd"><h2>미납 문자 생성</h2><button class="mcl" onclick="closeModal()">✕</button></div>
+    <div class="mbody">
+      <div class="info-grid" id="mInfo"></div>
+      <div id="mUnpaid"></div>
+      <div class="tpl-lbl">문자 유형 선택</div>
+      <div class="tpl-row">
+        <button class="tpl-btn on" onclick="selTpl(0,this)">1차 안내</button>
+        <button class="tpl-btn" onclick="selTpl(1,this)">2차 독촉</button>
+        <button class="tpl-btn" onclick="selTpl(2,this)">회수 경고</button>
+      </div>
+      <div class="tpl-lbl">문자 내용 (직접 수정 가능)</div>
+      <textarea id="msgArea"></textarea>
+    </div>
+    <div class="mfooter">
+      <button class="btn-cancel" onclick="closeModal()">닫기</button>
+      <button class="btn-copy" onclick="copyMsg()">📋 복사하기</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────
+const TODAY = new Date(); // 실운영: 실시간 날짜 사용
+const SHEETS = ['렌탈','구리','로운','코젠'];
+const GAS_URL_KEY = 'rental_gas_url';
+
+// ── STATE ────────────────────────────────────────────────────
+let allData = [], curSheet = '전체', sortCol = 'status', sortDir = 1;
+let curRow = null, curUnpaid = null;
+
+// ── GAS URL 관리 ─────────────────────────────────────────────
+function getSavedUrl() { return localStorage.getItem(GAS_URL_KEY) || ''; }
+
+function connectGAS() {
+  const url = document.getElementById('gasUrlInput').value.trim();
+  if (!url.includes('script.google.com')) {
+    alert('올바른 Google Apps Script URL을 입력해주세요.\nhttps://script.google.com/macros/s/...로 시작해야 합니다.');
+    return;
+  }
+  localStorage.setItem(GAS_URL_KEY, url);
+  startApp();
+}
+
+function startApp() {
+  document.getElementById('setupGuide').style.display = 'none';
+  document.getElementById('appSection').style.display = 'block';
+  document.getElementById('btnRef').style.display = 'flex';
+  loadData();
+}
+
+// ── LOAD DATA ────────────────────────────────────────────────
+async function loadData() {
+  const gasUrl = getSavedUrl();
+  if (!gasUrl) return;
+
+  const btn = document.getElementById('btnRef');
+  const icon = document.getElementById('refIcon');
+  btn.disabled = true; icon.classList.add('spin');
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('loadingEl').style.display = 'flex';
+  document.getElementById('tbody').innerHTML = '';
+
+  try {
+    const res = await fetch(gasUrl);
+    if (!res.ok) throw new Error(`서버 응답 오류 (${res.status})`);
+    const json = await res.json();
+    if (!json.success) throw new Error('데이터 형식 오류');
+
+    allData = json.data.map(r => ({
+      ...r,
+      금액: parseFloat(r.금액) || 0,
+      결제일: parseDate(r.결제일),
+      렌탈일: parseDate(r.렌탈일),
+    }));
+
+    document.getElementById('updated').textContent = '업데이트: ' + (json.updated || fmtNow());
+    buildTabs(); renderAll();
+  } catch(e) {
+    const box = document.getElementById('errBox');
+    box.innerHTML = `⚠️ 데이터 로드 실패: <b>${e.message}</b><br>
+      <span style="font-size:12px;margin-top:6px;display:block">
+      • 앱스 스크립트 배포 URL이 맞는지 확인하세요<br>
+      • 배포 시 액세스 권한이 "모든 사용자"로 설정됐는지 확인하세요<br>
+      • URL 재입력: <button onclick="resetUrl()" style="color:var(--teal-600);background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline">URL 다시 설정</button>
+      </span>`;
+    box.classList.add('show');
+  }
+
+  document.getElementById('loadingEl').style.display = 'none';
+  btn.disabled = false; icon.classList.remove('spin');
+}
+
+function resetUrl() {
+  localStorage.removeItem(GAS_URL_KEY);
+  document.getElementById('appSection').style.display = 'none';
+  document.getElementById('btnRef').style.display = 'none';
+  document.getElementById('setupGuide').style.display = 'block';
+  document.getElementById('errBox').classList.remove('show');
+}
+
+// ── DATE ─────────────────────────────────────────────────────
+function parseDate(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  let m;
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m = s.match(/^(\d{2})-(\d{2})-(\d{2})$/); if(m) return new Date(2000+ +m[1],+m[2]-1,+m[3]);
+  m = s.match(/^(\d{2})\.(\d{2})\.(\d{2})$/); if(m) return new Date(2000+ +m[1],+m[2]-1,+m[3]);
+  m = s.match(/^(\d{4})\.(\d{2})\.(\d{2})$/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m = s.match(/^(\d{4})(\d{2})(\d{2})$/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  return null;
+}
+function fmtD(d){if(!d)return'—';return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')}
+function fmtD2(d){if(!d)return'—';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtNow(){const n=new Date();return`${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`}
+function comma(n){return Math.round(n).toLocaleString('ko-KR')}
+
+// ── UNPAID CALC ──────────────────────────────────────────────
+function calcUnpaid(row) {
+  const payDay = row.렌탈일 ? row.렌탈일.getDate() : null;
+  const amt = row.금액, vat = row.부가;
+  const mCharge = vat === '별' ? Math.round(amt*1.1*10000) : amt*10000;
+  const ps = String(row.결제||'').trim();
+
+  if(!ps||ps==='완납'||ps.includes('완납')||ps==='매입'||ps.includes('무상'))
+    return{status:'ok',totalWon:0,breakdown:[],note:ps||'완납'};
+  if(!payDay) return{status:'warn',totalWon:0,breakdown:[],note:'렌탈일 정보 없음'};
+
+  const m=ps.match(/(\d{1,2})월완/);
+  if(!m) return{status:'warn',totalWon:0,breakdown:[],note:'결제현황 확인필요: '+ps};
+
+  const pMonth=parseInt(m[1]);
+  let pYear=TODAY.getFullYear();
+  if(pMonth>TODAY.getMonth()+2) pYear--;
+
+  let eM=pMonth+1,eY=pYear;
+  if(eM>12){eM=1;eY++;}
+  let eD=payDay-1;
+  if(eD===0){eM--;if(eM===0){eM=12;eY--;}eD=new Date(eY,eM,0).getDate();}
+  const paidUpTo=new Date(eY,eM-1,eD);
+
+  if(TODAY<=paidUpTo) return{status:'ok',totalWon:0,breakdown:[],note:'정상',paidUpTo,payDay};
+
+  let cY=pYear,cM=pMonth+1;
+  if(cM>12){cM=1;cY++;}
+  const missed=[];
+  for(let i=0;i<36;i++){
+    const pd=new Date(cY,cM-1,payDay);
+    if(pd>TODAY)break;
+    missed.push({year:cY,month:cM,payDate:pd});
+    cM++;if(cM>12){cM=1;cY++;}
+  }
+
+  const full=missed.filter(mm=>{
+    let nM=mm.month+1,nY=mm.year;
+    if(nM>12){nM=1;nY++;}
+    return new Date(nY,nM-1,payDay)<=TODAY;
+  });
+
+  let pStart=null;
+  const last=missed[missed.length-1];
+  if(last){
+    let nM=last.month+1,nY=last.year;
+    if(nM>12){nM=1;nY++;}
+    const np=new Date(nY,nM-1,payDay);
+    pStart=np<=TODAY?np:last.payDate;
+  }
+
+  const breakdown=[]; let totalWon=0;
+  if(full.length>0){
+    const won=full.length*mCharge; totalWon+=won;
+    const vs=vat==='포'||vat==='별'?'(부가세 포함)':'';
+    breakdown.push({label:`${full.length}개월 미납 ${vs}`,won,detail:`월 ${comma(mCharge)}원 × ${full.length}개월`});
+  }
+  if(pStart&&pStart<=TODAY){
+    const pM=pStart.getMonth(),pY2=pStart.getFullYear();
+    const dim=new Date(pY2,pM+1,0).getDate();
+    const ud=Math.floor((TODAY-pStart)/(86400*1000))+1;
+    const daily=Math.round(mCharge/dim);
+    const pw=daily*ud; totalWon+=pw;
+    breakdown.push({label:`${fmtD2(pStart)} ~ ${fmtD2(TODAY)} 사용분`,won:pw,detail:`${ud}일 × ${comma(daily)}원/일`});
+  }
+
+  const status=totalWon>0?(full.length>=2?'late':'warn'):'ok';
+  return{status,totalWon,breakdown,paidUpTo,payDay,monthlyCharge:mCharge,vat,fullMonths:full,partialStart:pStart};
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function buildTabs(){
+  const names=['전체',...SHEETS];
+  document.getElementById('tabWrap').innerHTML=names.map(n=>{
+    const c=n==='전체'?allData.length:allData.filter(r=>r.시트===n).length;
+    return`<button class="tab${n===curSheet?' on':''}" onclick="switchTab('${n}')">${n} <small style="opacity:.5">${c}</small></button>`;
+  }).join('');
+}
+function switchTab(s){curSheet=s;buildTabs();renderAll();}
+
+// ── RENDER ───────────────────────────────────────────────────
+function getFiltered(){
+  const st=document.getElementById('fStatus').value;
+  const ty=document.getElementById('fType').value;
+  const q=document.getElementById('searchInp').value.trim().toLowerCase();
+  const sOrd={late:0,warn:1,ok:2};
+  return allData.filter(r=>{
+    if(curSheet!=='전체'&&r.시트!==curSheet)return false;
+    if(ty!=='all'&&r.구분!==ty)return false;
+    if(q&&!(r.업체+r.연락처).toLowerCase().includes(q))return false;
+    const u=calcUnpaid(r);
+    if(st==='late'&&u.status!=='late')return false;
+    if(st==='warn'&&u.status!=='warn')return false;
+    if(st==='ok'&&u.status!=='ok')return false;
+    return true;
+  }).sort((a,b)=>{
+    let va,vb;
+    if(sortCol==='status'){const ua=calcUnpaid(a),ub=calcUnpaid(b);va=sOrd[ua.status];vb=sOrd[ub.status];}
+    else if(sortCol==='미납'){va=calcUnpaid(a).totalWon;vb=calcUnpaid(b).totalWon;}
+    else if(sortCol==='금액'){va=a.금액;vb=b.금액;}
+    else if(sortCol==='결제일'){va=a.결제일?a.결제일.getTime():0;vb=b.결제일?b.결제일.getTime():0;}
+    else if(sortCol==='업체'){va=a.업체;vb=b.업체;}
+    else if(sortCol==='구분'){va=a.구분;vb=b.구분;}
+    if(va<vb)return -sortDir;if(va>vb)return sortDir;return 0;
+  });
+}
+
+function renderAll(){renderStats();renderTable();}
+
+function renderStats(){
+  const data=curSheet==='전체'?allData:allData.filter(r=>r.시트===curSheet);
+  let ok=0,warn=0,late=0,total$=0;
+  data.forEach(r=>{const u=calcUnpaid(r);if(u.status==='ok')ok++;else if(u.status==='warn')warn++;else{late++;total$+=u.totalWon;}});
+  document.getElementById('sTotal').textContent=data.length;
+  document.getElementById('sOk').textContent=ok;
+  document.getElementById('sWarn').textContent=warn;
+  document.getElementById('sLate').textContent=late;
+  document.getElementById('sTotalW').textContent=comma(total$)+'원';
+}
+
+function renderTable(){
+  const rows=getFiltered();
+  window._rows=rows;
+  document.getElementById('cnt').textContent=`${rows.length}건 표시`;
+  if(!rows.length){
+    document.getElementById('tbody').innerHTML='<tr><td colspan="9"><div class="empty">🔍 조건에 맞는 데이터가 없습니다</div></td></tr>';
+    return;
+  }
+  document.getElementById('tbody').innerHTML=rows.map((r,idx)=>{
+    const u=calcUnpaid(r);
+    const sb=u.status==='ok'?'<span class="bdg bdg-ok">정상</span>':u.status==='late'?'<span class="bdg bdg-late">미납의심</span>':'<span class="bdg bdg-warn">확인필요</span>';
+    const tb=r.구분==='연납'?'<span class="bdg bdg-annual">연납</span>':`<span class="bdg bdg-type">${r.구분}</span>`;
+    const ut=u.totalWon>0?`<span class="unpaid-amt">${comma(u.totalWon)}원</span>`:u.status==='ok'?'<span style="color:#ccc">—</span>':'<span style="color:#BA7517">확인</span>';
+    const tel=r.연락처.split(/[\/\s]/)[0].trim();
+    const vatD=r.부가==='별'?'별도':r.부가==='포'?'포함':'현금';
+    const bc=u.status==='late'?'btn-msg red':'btn-msg';
+    return`<tr><td>${tb}</td><td title="${r.업체}" style="font-weight:500">${r.업체}</td><td style="color:var(--gray-600)">${tel}</td><td style="text-align:right;font-weight:600">${r.금액}만 <span style="font-size:11px;color:var(--gray-400);font-weight:400">${vatD}</span></td><td>${r.결제||'—'}</td><td style="color:var(--gray-600)">${fmtD(r.결제일)}</td><td>${sb}</td><td>${ut}</td><td><button class="${bc}" onclick="openModal(${idx})">✉️ 문자</button></td></tr>`;
+  }).join('');
+}
+
+function srt(col){
+  if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
+  document.querySelectorAll('.sa').forEach(e=>e.textContent='▾');
+  const e=document.getElementById(`sa-${col}`);
+  if(e)e.textContent=sortDir===1?'▾':'▴';
+  renderTable();
+}
+
+// ── MODAL ────────────────────────────────────────────────────
+function openModal(idx){
+  const r=window._rows[idx]; curRow=r;
+  const u=calcUnpaid(r); curUnpaid=u;
+  const biz=r.업체.split('/')[0].trim();
+  const vl=r.부가==='별'?`월 ${r.금액}만원 + 부가세 별도 (청구액 ${comma(Math.round(r.금액*1.1))}만원)`:r.부가==='포'?`월 ${r.금액}만원 (부가세 포함)`:`월 ${r.금액}만원 (현금)`;
+  document.getElementById('mInfo').innerHTML=`
+    <div class="info-item"><span class="ik">업체명</span><span class="iv">${biz}</span></div>
+    <div class="info-item"><span class="ik">연락처</span><span class="iv">${r.연락처.split(/[\/\s]/)[0]}</span></div>
+    <div class="info-item"><span class="ik">모델</span><span class="iv">${r.모델||'—'}</span></div>
+    <div class="info-item"><span class="ik">렌탈 시작일 (기준일)</span><span class="iv">${fmtD(r.렌탈일)} → 매월 ${u.payDay||'?'}일</span></div>
+    <div class="info-item" style="grid-column:1/-1"><span class="ik">렌탈료</span><span class="iv" style="font-size:12px;font-weight:500">${vl}</span></div>
+    ${r.비고?`<div class="info-item" style="grid-column:1/-1"><span class="ik">비고</span><span class="iv" style="font-size:12px;font-weight:400;color:var(--gray-600);white-space:normal">${r.비고}</span></div>`:''}`;
+
+  let uh='';
+  if(u.totalWon>0){
+    uh=`<div class="unpaid-box"><div class="ubt">⚠ 미납 내역</div>${u.breakdown.map(b=>`<div class="urow"><div><div class="ul">${b.label}</div><div class="ud">${b.detail}</div></div><div class="ua">${comma(b.won)}원</div></div>`).join('')}<div class="utotal"><span class="utl">총 미납액</span><span class="uta">${comma(u.totalWon)}원</span></div></div>`;
+  }else if(u.status==='warn'){
+    uh=`<div class="warn-box">⚠ ${u.note}</div>`;
+  }else{
+    uh=`<div class="ok-box">✅ 정상 납부 중 ${u.paidUpTo?'('+fmtD(u.paidUpTo)+'까지 완납)':''}</div>`;
+  }
+  document.getElementById('mUnpaid').innerHTML=uh;
+  document.querySelectorAll('.tpl-btn').forEach((b,i)=>b.className='tpl-btn'+(i===0?' on':''));
+  document.getElementById('msgArea').value=mkTpl(0,r,u);
+  document.getElementById('backdrop').className='backdrop open';
+}
+
+function selTpl(idx,btn){
+  document.querySelectorAll('.tpl-btn').forEach(b=>b.className='tpl-btn');
+  btn.className='tpl-btn on';
+  document.getElementById('msgArea').value=mkTpl(idx,curRow,curUnpaid);
+}
+
+function mkTpl(idx,r,u){
+  const biz=r.업체.split('/')[0].trim();
+  const L=[];
+  if(idx===0){
+    L.push('[렌탈료 납부 안내]',`${biz} 담당자님, 안녕하세요.`,'','전동지게차 렌탈료 미납이 확인되어 안내드립니다.','');
+    if(u.breakdown.length){u.breakdown.forEach(b=>{L.push(`• ${b.label}: ${comma(b.won)}원`);L.push(`  (${b.detail})`);});L.push('');L.push(`▶ 총 미납액: ${comma(u.totalWon)}원`);}
+    L.push('','빠른 시일 내 납부 부탁드립니다. 감사합니다.');
+  }else if(idx===1){
+    L.push('[렌탈료 납부 독촉 — 2차]',`${biz} 담당자님,`,'','렌탈료 미납이 지속되고 있어 재안내드립니다.','');
+    if(u.breakdown.length){u.breakdown.forEach(b=>L.push(`• ${b.label}: ${comma(b.won)}원`));L.push(`• 총 미납액: ${comma(u.totalWon)}원`);}
+    L.push('','금주 내 납부 혹은 납부 일정을 연락 주시기 바랍니다.','미응답 시 차량 회수 절차가 진행될 수 있습니다.');
+  }else{
+    L.push('[지게차 회수 사전 통보]',`${biz} 담당자님,`,'',`렌탈료 장기 미납(총 ${comma(u.totalWon)}원)으로 인해 차량 회수 절차를 진행합니다.`,'',`• 모델: ${r.모델}`,`• 미납 현황: ${r.결제||'미확인'}`,'','연락 없을 시 금일~익일 중 회수팀이 방문합니다.','납부 또는 협의를 원하시면 즉시 연락 주세요.');
+  }
+  return L.join('\n');
+}
+
+function closeModal(){document.getElementById('backdrop').className='backdrop';}
+function copyMsg(){navigator.clipboard.writeText(document.getElementById('msgArea').value).then(()=>showToast('📋 문자 내용이 복사됐습니다!'));}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+document.getElementById('searchInp').addEventListener('input',renderAll);
+document.getElementById('fStatus').addEventListener('change',renderAll);
+document.getElementById('fType').addEventListener('change',renderAll);
+document.getElementById('backdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+// INIT
+if(getSavedUrl()) startApp();
+</script>
+</body>
+</html>
