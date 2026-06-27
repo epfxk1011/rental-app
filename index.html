@@ -630,6 +630,27 @@ function calcUnpaidByPaySheet(row, payRows) {
   return { status, totalWon, breakdown, payDay, monthlyCharge: mCharge, vat, fromPaySheet: true };
 }
 
+// 결제 문자열에서 {year, month} 파싱
+// 지원 형식: "26-06", "2026-06", "6월완", "완납" 등
+function parsePaidYM(ps) {
+  let m;
+  // "26-06", "26-06완" 형식
+  m = ps.match(/^(\d{2})-(\d{2})/);
+  if (m) return { year: 2000+parseInt(m[1]), month: parseInt(m[2]) };
+  // "2026-06" 형식
+  m = ps.match(/^(\d{4})-(\d{2})/);
+  if (m) return { year: parseInt(m[1]), month: parseInt(m[2]) };
+  // "6월완" 형식 (기존 호환)
+  m = ps.match(/(\d{1,2})월완/);
+  if (m) {
+    const month = parseInt(m[1]);
+    let year = TODAY.getFullYear();
+    if (month > TODAY.getMonth()+2) year--;
+    return { year, month };
+  }
+  return null;
+}
+
 // 기존 방식 미납 계산 (납부 시트 없을 때)
 function calcUnpaidLegacy(row) {
   const payDay = row.렌탈일 ? row.렌탈일.getDate() : null;
@@ -637,23 +658,25 @@ function calcUnpaidLegacy(row) {
   const mCharge = vat === '별' ? Math.round(amt*1.1*10000) : amt*10000;
   const ps = String(row.결제||'').trim();
 
+  // 완납/매입/무상 케이스
   if(!ps||ps==='완납'||ps.includes('완납')||ps==='매입'||ps.includes('무상'))
     return{status:'ok',totalWon:0,breakdown:[],note:ps||'완납'};
   if(!payDay) return{status:'warn',totalWon:0,breakdown:[],note:'렌탈일 정보 없음'};
 
-  const m=ps.match(/(\d{1,2})월완/);
-  if(!m) return{status:'warn',totalWon:0,breakdown:[],note:'결제현황 확인필요: '+ps};
+  // 결제 형식 파싱 (26-06, 6월완 모두 지원)
+  const pym = parsePaidYM(ps);
+  if(!pym) return{status:'warn',totalWon:0,breakdown:[],note:'결제현황 확인필요: '+ps};
 
-  const pMonth=parseInt(m[1]);
-  let pYear=TODAY.getFullYear();
-  if(pMonth>TODAY.getMonth()+2) pYear--;
+  const pMonth = pym.month, pYear = pym.year;
 
+  // 완납 커버 종료일: 납부월 다음달 payDay-1일
   let eM=pMonth+1,eY=pYear;
   if(eM>12){eM=1;eY++;}
   let eD=payDay-1;
   if(eD===0){eM--;if(eM===0){eM=12;eY--;}eD=new Date(eY,eM,0).getDate();}
   const paidUpTo=new Date(eY,eM-1,eD);
 
+  // 선납 포함 — paidUpTo가 오늘 이후면 정상 (미래달 선납도 OK)
   if(TODAY<=paidUpTo) return{status:'ok',totalWon:0,breakdown:[],note:'정상',paidUpTo,payDay};
 
   let cY=pYear,cM=pMonth+1;
