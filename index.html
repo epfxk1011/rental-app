@@ -151,6 +151,43 @@ textarea:focus{border-color:var(--teal-400)}
 .url-input:focus{border-color:var(--teal-400)}
 .btn-connect{padding:10px 22px;background:var(--teal-400);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer}
 .btn-connect:hover{background:var(--teal-600)}
+
+/* PAYMENT HISTORY MODAL */
+.ph-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.ph-backdrop.open{display:flex}
+.ph-modal{background:#fff;border-radius:var(--rl);width:780px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.18);flex-shrink:0}
+.ph-hd{padding:18px 22px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between}
+.ph-hd h2{font-size:16px;font-weight:700}
+.ph-info{background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:12px 22px;display:flex;gap:24px;font-size:13px;flex-wrap:wrap}
+.ph-info-item{display:flex;flex-direction:column;gap:2px}
+.ph-info-key{font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.04em}
+.ph-info-val{font-weight:600;color:var(--gray-800)}
+.ph-body{padding:18px 22px}
+.ph-tbl-wrap{border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.ph-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.ph-tbl th{background:var(--gray-50);padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);white-space:nowrap}
+.ph-tbl td{padding:7px 8px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+.ph-tbl tr:last-child td{border-bottom:none}
+.ph-tbl tr:hover td{background:#FAFAF8}
+.ph-inp{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;font-size:13px;font-family:var(--font);background:transparent;color:var(--gray-800);outline:none;transition:all .15s}
+.ph-inp:hover{border-color:var(--gray-200);background:#fff}
+.ph-inp:focus{border-color:var(--teal-400);background:#fff;box-shadow:0 0 0 2px rgba(29,158,117,.1)}
+.ph-amt{font-weight:600;color:var(--teal-600);font-size:13px;padding:6px 8px}
+.ph-del{width:28px;height:28px;border:none;background:none;color:var(--gray-400);cursor:pointer;border-radius:6px;font-size:15px;display:flex;align-items:center;justify-content:center}
+.ph-del:hover{background:var(--red-50);color:var(--red-400)}
+.ph-add-row{display:flex;align-items:center;gap:8px;padding:10px 0 4px}
+.btn-add-row{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px dashed var(--gray-200);border-radius:var(--r);background:none;font-size:13px;color:var(--gray-400);cursor:pointer;transition:all .15s}
+.btn-add-row:hover{border-color:var(--teal-400);color:var(--teal-600);background:var(--teal-50)}
+.ph-summary{background:var(--teal-50);border:1px solid var(--teal-100);border-radius:var(--r);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ph-sum-left{font-size:13px;color:var(--teal-600)}
+.ph-sum-right{font-size:18px;font-weight:800;color:var(--teal-600)}
+.ph-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--gray-100);background:var(--gray-50)}
+.ph-footer-left{display:flex;gap:8px}
+.btn-copy-hist{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--gray-800);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer}
+.btn-copy-hist:hover{background:var(--gray-600)}
+.btn-save-hist{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--teal-400);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer}
+.btn-save-hist:hover{background:var(--teal-600)}
+.ph-note{font-size:12px;color:var(--gray-400);padding:0 22px 14px}
 </style>
 </head>
 <body>
@@ -264,7 +301,7 @@ textarea:focus{border-color:var(--teal-400)}
           <th style="width:98px" onclick="srt('결제일')">마지막결제<span class="sa" id="sa-결제일">▾</span></th>
           <th style="width:70px" onclick="srt('status')">상태<span class="sa" id="sa-status">▾</span></th>
           <th style="width:125px" onclick="srt('미납')">추정미납액<span class="sa" id="sa-미납">▾</span></th>
-          <th style="width:95px">문자생성</th>
+          <th style="width:85px">결제내역</th><th style="width:95px">문자생성</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -273,6 +310,48 @@ textarea:focus{border-color:var(--teal-400)}
     <div class="loading" id="loadingEl" style="display:none">
       <div class="loader"></div>
       <div>구글 시트에서 데이터를 불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PAYMENT HISTORY MODAL -->
+<div class="ph-backdrop" id="phBackdrop">
+  <div class="ph-modal">
+    <div class="ph-hd">
+      <h2>📋 결제내역 관리</h2>
+      <button class="mcl" onclick="closePayHist()">✕</button>
+    </div>
+    <div class="ph-info" id="phInfo"></div>
+    <div class="ph-body">
+      <div class="ph-tbl-wrap">
+        <table class="ph-tbl">
+          <thead><tr>
+            <th style="width:36px">#</th>
+            <th style="width:130px">납부일</th>
+            <th style="width:110px">해당 월</th>
+            <th style="width:130px">납부금액</th>
+            <th style="width:180px">메모</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="phTbody"></tbody>
+        </table>
+      </div>
+      <div class="ph-add-row">
+        <button class="btn-add-row" onclick="addPayRow()">＋ 행 추가</button>
+        <span style="font-size:12px;color:var(--gray-400)">납부일 또는 해당월 입력 시 금액 자동 계산</span>
+      </div>
+      <div class="ph-summary" id="phSummary" style="display:none"></div>
+    </div>
+    <div class="ph-note" id="phNote"></div>
+    <div class="ph-footer">
+      <div class="ph-footer-left">
+        <button class="btn-copy-hist" onclick="copyPayHist()">📄 내역 문자 복사</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closePayHist()">닫기</button>
+        <button class="btn-save-hist" onclick="savePayHist()">💾 저장</button>
+      </div>
     </div>
   </div>
 </div>
@@ -308,7 +387,7 @@ const SHEETS = ['렌탈','구리','로운','코젠'];
 const GAS_URL_KEY = 'rental_gas_url';
 
 // ── STATE ────────────────────────────────────────────────────
-let allData = [], curSheet = '전체', sortCol = 'status', sortDir = 1;
+let allData = [], payData = [], payMap = {}, curSheet = '전체', sortCol = 'status', sortDir = 1;
 let curRow = null, curUnpaid = null;
 
 // ── GAS URL 관리 ─────────────────────────────────────────────
@@ -348,6 +427,24 @@ async function loadData() {
     if (!res.ok) throw new Error(`서버 응답 오류 (${res.status})`);
     const json = await res.json();
     if (!json.success) throw new Error('데이터 형식 오류');
+
+    // 납부 데이터 로드 (업체명 → 납부행 배열 맵)
+    try {
+      const payRes = await fetch(gasUrl + '?action=payment');
+      if (payRes.ok) {
+        const payJson = await payRes.json();
+        if (payJson.success) {
+          payData = payJson.data;
+          // 업체명별 맵 구성
+          payMap = {};
+          payData.forEach(p => {
+            const biz = p.업체명;
+            if (!payMap[biz]) payMap[biz] = [];
+            payMap[biz].push(p);
+          });
+        }
+      }
+    } catch(e) { payData = []; payMap = {}; }
 
     allData = json.data.map(r => ({
       ...r,
@@ -403,7 +500,138 @@ function fmtNow(){const n=new Date();return`${n.getFullYear()}.${String(n.getMon
 function comma(n){return Math.round(n).toLocaleString('ko-KR')}
 
 // ── UNPAID CALC ──────────────────────────────────────────────
-function calcUnpaid(row) {
+// 해당월 문자열을 숫자키로 변환 (비교용)
+// "26-05" → 202605, "2026-05" → 202605
+function monthKey(str) {
+  str = String(str||'').replace('(부분)','').replace('(부)','').trim();
+  let m;
+  m = str.match(/^(\d{4})-(\d{2})$/); if(m) return parseInt(m[1])*100+parseInt(m[2]);
+  m = str.match(/^(\d{2})-(\d{2})$/); if(m) return (2000+parseInt(m[1]))*100+parseInt(m[2]);
+  return 0;
+}
+
+// 납부 시트 기반 미납 계산
+function calcUnpaidByPaySheet(row, payRows) {
+  const amt = row.금액, vat = row.부가;
+  const mCharge = vat === '별' ? Math.round(amt*1.1*10000) : amt*10000;
+  const payDay = row.렌탈일 ? row.렌탈일.getDate() : null;
+
+  // 납부행을 해당월 기준 오름차순 정렬
+  const sorted = [...payRows].sort((a,b) => monthKey(a.해당월) - monthKey(b.해당월));
+
+  // 납부 시트 첫 행의 해당월 → 그 이전은 완납으로 간주
+  // 마지막으로 완납 처리된 달 파악
+  let lastFullPaidKey = 0; // 납부 시트 첫 행 직전 달을 완납으로 봄
+
+  if (sorted.length > 0) {
+    const firstKey = monthKey(sorted[0].해당월);
+    // 첫 행 직전 달 = 완납 기준점
+    let prevY = Math.floor(firstKey / 100);
+    let prevM = firstKey % 100 - 1;
+    if (prevM === 0) { prevM = 12; prevY--; }
+    lastFullPaidKey = prevY * 100 + prevM;
+  }
+
+  const breakdown = [];
+  let totalWon = 0;
+
+  // 납부 시트 각 행 처리
+  sorted.forEach(p => {
+    const rawMonth = String(p.해당월||'').trim();
+    const isPartial = rawMonth.includes('부분') || rawMonth.includes('(부)');
+    const mk = monthKey(rawMonth);
+    if (!mk) return;
+
+    const paid = parseFloat(String(p.금액||'0').replace(/[^0-9.-]/g,'')) || 0;
+
+    if (isPartial) {
+      // 부분 납부: 차액만 미납
+      const diff = mCharge - paid;
+      if (diff > 0) {
+        totalWon += diff;
+        const monthLabel = rawMonth.replace('(부분)','').replace('(부)','').trim();
+        breakdown.push({
+          label: monthLabel + ' 부분 미납',
+          won: diff,
+          detail: `납부 ${comma(paid)}원 / 정상 ${comma(mCharge)}원 → 차액 ${comma(diff)}원`
+        });
+      }
+    }
+    // 완납(해당월 있고 부분 아님)은 스킵
+  });
+
+  // 납부 시트에 없는 달 = 완전 미납
+  // 납부 시트의 마지막 완납 달 이후부터 오늘까지 체크
+  const paidKeys = new Set(sorted
+    .filter(p => !String(p.해당월||'').includes('부분') && !String(p.해당월||'').includes('(부)'))
+    .map(p => monthKey(p.해당월))
+    .filter(k => k > 0)
+  );
+
+  // 납부 시트 첫 달부터 현재까지 순회
+  if (sorted.length > 0 && payDay) {
+    const firstKey = monthKey(sorted[0].해당월);
+    let cY = Math.floor(firstKey / 100);
+    let cM = firstKey % 100;
+    const todayKey = TODAY.getFullYear() * 100 + (TODAY.getMonth() + 1);
+
+    while (true) {
+      const curKey = cY * 100 + cM;
+      if (curKey > todayKey) break;
+
+      const payDate = new Date(cY, cM-1, payDay);
+
+      // 아직 결제일이 안 됐으면 스킵 (이번 달 선납일 전)
+      if (payDate > TODAY) break;
+
+      // 납부 시트에 해당 달이 없으면 완전 미납
+      if (!paidKeys.has(curKey)) {
+        // 부분 납부도 아닌 경우만 (부분은 위에서 처리)
+        const partialEntry = sorted.find(p => {
+          const rawM = String(p.해당월||'').trim();
+          return monthKey(rawM) === curKey && (rawM.includes('부분') || rawM.includes('(부)'));
+        });
+        if (!partialEntry) {
+          // 이번 달인지 확인 → 일할 계산
+          let nM = cM+1, nY = cY;
+          if (nM > 12) { nM = 1; nY++; }
+          const nextPayDate = new Date(nY, nM-1, payDay);
+
+          if (nextPayDate <= TODAY) {
+            // 완월 미납
+            totalWon += mCharge;
+            breakdown.push({
+              label: `${cY}-${String(cM).padStart(2,'0')} 미납`,
+              won: mCharge,
+              detail: `월 ${comma(mCharge)}원`
+            });
+          } else {
+            // 일할 계산 (이번 달 payDay ~ 오늘)
+            const dim = new Date(cY, cM, 0).getDate();
+            const ud = Math.floor((TODAY - payDate) / (86400*1000)) + 1;
+            const daily = Math.round(mCharge / dim);
+            const pw = daily * ud;
+            totalWon += pw;
+            breakdown.push({
+              label: `${fmtD2(payDate)} ~ ${fmtD2(TODAY)} 사용분`,
+              won: pw,
+              detail: `${ud}일 × ${comma(daily)}원/일`
+            });
+          }
+        }
+      }
+
+      cM++;
+      if (cM > 12) { cM = 1; cY++; }
+    }
+  }
+
+  const status = totalWon > 0 ? (totalWon >= mCharge * 2 ? 'late' : 'warn') : 'ok';
+  return { status, totalWon, breakdown, payDay, monthlyCharge: mCharge, vat, fromPaySheet: true };
+}
+
+// 기존 방식 미납 계산 (납부 시트 없을 때)
+function calcUnpaidLegacy(row) {
   const payDay = row.렌탈일 ? row.렌탈일.getDate() : null;
   const amt = row.금액, vat = row.부가;
   const mCharge = vat === '별' ? Math.round(amt*1.1*10000) : amt*10000;
@@ -472,11 +700,22 @@ function calcUnpaid(row) {
   return{status,totalWon,breakdown,paidUpTo,payDay,monthlyCharge:mCharge,vat,fullMonths:full,partialStart:pStart};
 }
 
+// 메인 calcUnpaid — 납부 시트 데이터 있으면 우선 사용
+function calcUnpaid(row) {
+  const bizMain = row.업체.split('/')[0].trim();
+  // 납부 시트에서 해당 업체 데이터 찾기
+  const payRows = payMap[bizMain] || payMap[row.업체] || [];
+  if (payRows.length > 0) {
+    return calcUnpaidByPaySheet(row, payRows);
+  }
+  return calcUnpaidLegacy(row);
+}
+
 // ── TABS ─────────────────────────────────────────────────────
 function buildTabs(){
-  const names=['전체',...SHEETS];
+  const names=['전체',...SHEETS,'납부내역'];
   document.getElementById('tabWrap').innerHTML=names.map(n=>{
-    const c=n==='전체'?allData.length:allData.filter(r=>r.시트===n).length;
+    const c=n==='전체'?allData.length:n==='납부내역'?payData.length:allData.filter(r=>r.시트===n).length;
     return`<button class="tab${n===curSheet?' on':''}" onclick="switchTab('${n}')">${n} <small style="opacity:.5">${c}</small></button>`;
   }).join('');
 }
@@ -509,7 +748,7 @@ function getFiltered(){
   });
 }
 
-function renderAll(){renderStats();renderTable();}
+function renderAll(){if(curSheet==='납부내역'){renderPayTab();}else{renderStats();renderTable();}}
 
 function renderStats(){
   const data=curSheet==='전체'?allData:allData.filter(r=>r.시트===curSheet);
@@ -538,7 +777,8 @@ function renderTable(){
     const tel=r.연락처.split(/[\/\s]/)[0].trim();
     const vatD=r.부가==='별'?'별도':r.부가==='포'?'포함':'현금';
     const bc=u.status==='late'?'btn-msg red':'btn-msg';
-    return`<tr><td>${tb}</td><td title="${r.업체}" style="font-weight:500">${r.업체}</td><td style="color:var(--gray-600)">${tel}</td><td style="text-align:right;font-weight:600">${r.금액}만 <span style="font-size:11px;color:var(--gray-400);font-weight:400">${vatD}</span></td><td>${r.결제||'—'}</td><td style="color:var(--gray-600)">${fmtD(r.결제일)}</td><td>${sb}</td><td>${ut}</td><td><button class="${bc}" onclick="openModal(${idx})">✉️ 문자</button></td></tr>`;
+    const hk=histKey(r);const hd=loadHist(hk);const hbdg=hd.length>0?`<span style="font-size:10px;background:var(--blue-50);color:var(--blue-600);border-radius:10px;padding:1px 7px;font-weight:700">${hd.length}건</span>`:'';
+    return`<tr><td>${tb}</td><td title="${r.업체}" style="font-weight:500">${r.업체}</td><td style="color:var(--gray-600)">${tel}</td><td style="text-align:right;font-weight:600">${r.금액}만 <span style="font-size:11px;color:var(--gray-400);font-weight:400">${vatD}</span></td><td>${r.결제||'—'}</td><td style="color:var(--gray-600)">${fmtD(r.결제일)}</td><td>${sb}</td><td>${ut}</td><td><button class="btn-msg" onclick="openPayFromTable(${idx})" title="납부내역 조회">📋 납부</button></td><td><button class="${bc}" onclick="openModal(${idx})">✉️ 문자</button></td></tr>`;
   }).join('');
 }
 
@@ -609,6 +849,423 @@ document.getElementById('searchInp').addEventListener('input',renderAll);
 document.getElementById('fStatus').addEventListener('change',renderAll);
 document.getElementById('fType').addEventListener('change',renderAll);
 document.getElementById('backdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+
+// ── PAYMENT HISTORY ──────────────────────────────────────────
+let phRow = null;
+
+function histKey(r) {
+  // 업체+시리얼 조합으로 고유키
+  const biz = r.업체.replace(/[^가-힣a-zA-Z0-9]/g,'').slice(0,10);
+  const sn  = (r.시리얼||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,8);
+  return `ph_${biz}_${sn}`;
+}
+
+function loadHist(key) {
+  try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch(e){ return []; }
+}
+
+function saveHist(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function openPayHist(idx) {
+  phRow = window._rows[idx];
+  const r = phRow;
+  const biz = r.업체.split('/')[0].trim();
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const vatLabel = r.부가==='별'?`월 ${r.금액}만원 (부가세 별도, 청구 ${comma(Math.round(r.금액*1.1))}만원)`:r.부가==='포'?`월 ${r.금액}만원 (부가세 포함)`:`월 ${r.금액}만원 (현금)`;
+  const payDay = r.렌탈일 ? r.렌탈일.getDate() : '?';
+
+  document.getElementById('phInfo').innerHTML = `
+    <div class="ph-info-item"><span class="ph-info-key">업체명</span><span class="ph-info-val">${biz}</span></div>
+    <div class="ph-info-item"><span class="ph-info-key">연락처</span><span class="ph-info-val">${r.연락처.split(/[\/\s]/)[0]}</span></div>
+    <div class="ph-info-item"><span class="ph-info-key">렌탈 시작일</span><span class="ph-info-val">${fmtD(r.렌탈일)} (매월 ${payDay}일 선납)</span></div>
+    <div class="ph-info-item"><span class="ph-info-key">렌탈료</span><span class="ph-info-val">${vatLabel}</span></div>
+    <div class="ph-info-item"><span class="ph-info-key">모델</span><span class="ph-info-val">${r.모델||'—'}</span></div>
+  `;
+
+  const key = histKey(r);
+  let hist = loadHist(key);
+
+  // 저장된 내역 없으면 렌탈일~현재 기준 자동 생성 (추정)
+  if (hist.length === 0 && r.렌탈일 && r.결제) {
+    hist = autoGenHist(r, mCharge);
+  }
+
+  renderPhTable(hist, mCharge);
+  document.getElementById('phBackdrop').className = 'ph-backdrop open';
+}
+
+function autoGenHist(r, mCharge) {
+  // N월완 파싱
+  const ps = String(r.결제||'').trim();
+  const m = ps.match(/(\d{1,2})월완/);
+  if (!m) return [];
+  const paidMonth = parseInt(m[1]);
+  let paidYear = TODAY.getFullYear();
+  if (paidMonth > TODAY.getMonth()+2) paidYear--;
+
+  const payDay = r.렌탈일.getDate();
+  const startDate = r.렌탈일;
+  const rows = [];
+
+  // 렌탈 시작월부터 완납월까지 자동 생성
+  let cY = startDate.getFullYear(), cM = startDate.getMonth()+1;
+  const endY = paidYear, endM = paidMonth;
+
+  let iter = 0;
+  while (iter++ < 120) {
+    const payDate = new Date(cY, cM-1, payDay);
+    const coverMonth = cM; const coverYear = cY;
+    rows.push({
+      date: fmtD2(payDate),
+      month: `${coverYear}-${String(coverMonth).padStart(2,'0')}`,
+      amt: mCharge,
+      memo: '자동생성(추정)',
+      auto: true
+    });
+    if (cY === endY && cM === endM) break;
+    cM++; if (cM > 12) { cM = 1; cY++; }
+  }
+  return rows;
+}
+
+function renderPhTable(hist, mCharge) {
+  const tbody = document.getElementById('phTbody');
+  if (!hist.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px">납부 내역이 없습니다. 행 추가 버튼으로 입력해주세요.</td></tr>';
+    document.getElementById('phSummary').style.display = 'none';
+    document.getElementById('phNote').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = hist.map((row, i) => {
+    const autoTag = row.auto ? '<span style="font-size:10px;color:var(--gray-400);margin-left:4px">(추정)</span>' : '';
+    return `<tr>
+      <td style="text-align:center;color:var(--gray-400);font-size:12px">${i+1}</td>
+      <td><input class="ph-inp" value="${row.date||''}" placeholder="2026-05-01" onchange="onPhDateChange(${i},this.value)" onblur="onPhDateChange(${i},this.value)"></td>
+      <td><input class="ph-inp" value="${row.month||''}" placeholder="2026-05" onchange="onPhMonthChange(${i},this.value)" onblur="onPhMonthChange(${i},this.value)"></td>
+      <td><span class="ph-amt" id="ph-amt-${i}">${comma(row.amt||0)}원</span>${autoTag}</td>
+      <td><input class="ph-inp" value="${row.memo||''}" placeholder="메모" onchange="onPhMemoChange(${i},this.value)"></td>
+      <td><button class="ph-del" onclick="delPhRow(${i})" title="삭제">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  // 합계
+  const total = hist.reduce((s,r)=>s+(r.amt||0),0);
+  const autoCount = hist.filter(r=>r.auto).length;
+  const sumEl = document.getElementById('phSummary');
+  sumEl.style.display = 'flex';
+  sumEl.innerHTML = `
+    <span class="ph-sum-left">총 ${hist.length}건 납부</span>
+    <span class="ph-sum-right">합계 ${comma(total)}원</span>
+  `;
+  const noteEl = document.getElementById('phNote');
+  noteEl.textContent = autoCount > 0 ? `※ (추정) 표시된 ${autoCount}건은 렌탈 시작일·완납월 기준으로 자동 생성된 추정 내역입니다. 실제 납부일과 다를 수 있습니다.` : '';
+}
+
+// 현재 테이블 상태 읽기
+function readPhTable() {
+  const rows = [];
+  const r = phRow;
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  document.querySelectorAll('#phTbody tr').forEach((tr, i) => {
+    const inputs = tr.querySelectorAll('.ph-inp');
+    if (!inputs.length) return;
+    const date  = inputs[0].value.trim();
+    const month = inputs[1].value.trim();
+    const memo  = inputs[2].value.trim();
+    const amtEl = tr.querySelector('.ph-amt');
+    const amt   = amtEl ? parseInt(amtEl.textContent.replace(/[^0-9]/g,''))||0 : mCharge;
+    rows.push({ date, month, amt, memo, auto: false });
+  });
+  return rows;
+}
+
+function onPhDateChange(idx, val) {
+  // 날짜 변경 시 금액 재계산 (현재는 기본 월금액 유지)
+  // 필요시 일할 계산 로직 추가 가능
+  const r = phRow;
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const el = document.getElementById(`ph-amt-${idx}`);
+  if (el) el.textContent = comma(mCharge)+'원';
+  updatePhSummary();
+}
+
+function onPhMonthChange(idx, val) {
+  const r = phRow;
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const el = document.getElementById(`ph-amt-${idx}`);
+  if (el) el.textContent = comma(mCharge)+'원';
+  updatePhSummary();
+}
+
+function onPhMemoChange(idx, val) { /* 메모만 변경, 금액 무변 */ }
+
+function updatePhSummary() {
+  const rows = readPhTable();
+  const total = rows.reduce((s,r)=>s+(r.amt||0),0);
+  const sumEl = document.getElementById('phSummary');
+  sumEl.style.display = 'flex';
+  sumEl.innerHTML = `<span class="ph-sum-left">총 ${rows.length}건 납부</span><span class="ph-sum-right">합계 ${comma(total)}원</span>`;
+}
+
+function addPayRow() {
+  const r = phRow;
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const hist = readPhTable();
+  hist.push({ date: '', month: '', amt: mCharge, memo: '', auto: false });
+  renderPhTable(hist, mCharge);
+  // 새 행 첫 인풋 포커스
+  const rows = document.querySelectorAll('#phTbody tr');
+  const last = rows[rows.length-1];
+  if (last) { const inp = last.querySelector('.ph-inp'); if(inp) inp.focus(); }
+}
+
+function delPhRow(idx) {
+  const r = phRow;
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const hist = readPhTable();
+  hist.splice(idx, 1);
+  renderPhTable(hist, mCharge);
+}
+
+function savePayHist() {
+  const hist = readPhTable();
+  const key = histKey(phRow);
+  saveHist(key, hist);
+  showToast('💾 저장됐습니다!');
+  renderTable(); // 배지 업데이트
+}
+
+function closePayHist() {
+  document.getElementById('phBackdrop').className = 'ph-backdrop';
+  phRow = null;
+}
+
+function copyPayHist() {
+  const hist = readPhTable();
+  const r = phRow;
+  const biz = r.업체.split('/')[0].trim();
+  const mCharge = r.부가==='별' ? Math.round(r.금액*1.1*10000) : r.금액*10000;
+  const vatLabel = r.부가==='별'?`월 ${r.금액}만원 (부가세 별도)`:r.부가==='포'?`월 ${r.금액}만원 (부가세 포함)`:`월 ${r.금액}만원 (현금)`;
+
+  const lines = [];
+  lines.push(`[납부내역 확인서]`);
+  lines.push(`업체명: ${biz}`);
+  lines.push(`렌탈 시작: ${fmtD(r.렌탈일)} / ${vatLabel}`);
+  lines.push(`모델: ${r.모델||'—'}`);
+  lines.push(`기준일: ${fmtD2(TODAY)}`);
+  lines.push('');
+  lines.push('─────────────────────');
+  lines.push('  납부일       해당월    금액');
+  lines.push('─────────────────────');
+
+  hist.forEach((row, i) => {
+    const date  = row.date  || '—';
+    const month = row.month || '—';
+    const amt   = comma(row.amt||0)+'원';
+    const memo  = row.memo  ? ` (${row.memo})` : '';
+    const auto  = row.auto  ? ' *추정' : '';
+    lines.push(`  ${date}  ${month}  ${amt}${memo}${auto}`);
+  });
+
+  lines.push('─────────────────────');
+  const total = hist.reduce((s,r)=>s+(r.amt||0),0);
+  lines.push(`  합계: ${comma(total)}원 (${hist.length}건)`);
+  if (hist.some(r=>r.auto)) {
+    lines.push('');
+    lines.push('* 표시는 렌탈 시작일 기준 추정 내역입니다.');
+  }
+
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>showToast('📄 납부내역이 복사됐습니다!'));
+}
+
+document.getElementById('phBackdrop').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closePayHist();
+});
+
+
+// ── PAYMENT TAB ──────────────────────────────────────────────
+let paySearchQuery = '';
+
+function renderPayTab() {
+  // 통계 숨기고 납부탭 보이기
+  document.getElementById('sumGrid').style.display = 'none';
+  document.getElementById('appSection').querySelector('.ctrl').style.display = 'none';
+  document.getElementById('tblWrap') && (document.getElementById('tblWrap').style.display = 'none');
+
+  const wrap = document.querySelector('.tbl-wrap');
+  if (wrap) wrap.style.display = 'none';
+
+  let payTabEl = document.getElementById('payTabSection');
+  if (!payTabEl) {
+    payTabEl = document.createElement('div');
+    payTabEl.id = 'payTabSection';
+    document.getElementById('appSection').appendChild(payTabEl);
+  }
+  payTabEl.style.display = 'block';
+
+  // 업체 목록 추출 (중복 제거)
+  const bizSet = {};
+  payData.forEach(p => {
+    const biz = p.업체명;
+    if (!bizSet[biz]) bizSet[biz] = [];
+    bizSet[biz].push(p);
+  });
+  const bizList = Object.keys(bizSet).sort();
+  const filtered = paySearchQuery
+    ? bizList.filter(b => b.includes(paySearchQuery))
+    : bizList;
+
+  payTabEl.innerHTML = `
+    <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center">
+      <div style="position:relative;flex:1;max-width:320px">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none">🔍</span>
+        <input id="paySearchInp" class="search-inp" type="text" placeholder="업체명 검색..." value="${paySearchQuery}"
+          oninput="paySearchQuery=this.value;renderPayTab()" style="padding-left:30px">
+      </div>
+      <span style="font-size:12px;color:var(--gray-400)">${filtered.length}개 업체 / ${payData.length}건</span>
+    </div>
+    ${filtered.length === 0 ? `
+      <div style="text-align:center;padding:3rem;color:var(--gray-400)">
+        ${payData.length === 0
+          ? '납부 시트에 데이터가 없습니다.<br><span style="font-size:12px">구글 시트에 "납부" 시트를 추가하고 데이터를 입력해주세요.</span>'
+          : '검색 결과가 없습니다.'}
+      </div>` : `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+      ${filtered.map(biz => {
+        const rows = bizSet[biz];
+        const total = rows.reduce((s,r)=>s+(parseFloat(r.금액)||0)*10000,0);
+        const latest = rows.reduce((a,b)=>(a.해당월>b.해당월?a:b),rows[0]);
+        return `<div onclick="openPayModal('${biz.replace(/'/g,"\'")}',${JSON.stringify(rows).replace(/</g,'\u003c').replace(/>/g,'\u003e').replace(/&/g,'\u0026')})" style="background:#fff;border:1px solid var(--gray-200);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--teal-400)';this.style.boxShadow='0 2px 8px rgba(29,158,117,.12)'" onmouseout="this.style.borderColor='var(--gray-200)';this.style.boxShadow=''">
+          <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--gray-800)">${biz}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;color:var(--gray-400)">${rows.length}건 납부</span>
+            <span style="font-size:13px;font-weight:600;color:var(--teal-600)">${comma(total)}원</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:4px">최근: ${latest.해당월||'—'} (${latest.납부일||'—'})</div>
+        </div>`;
+      }).join('')}
+    </div>`}
+  `;
+}
+
+function hidePayTab() {
+  const el = document.getElementById('payTabSection');
+  if (el) el.style.display = 'none';
+  document.getElementById('sumGrid').style.display = 'grid';
+  document.querySelector('.tbl-wrap').style.display = 'block';
+  document.querySelector('.ctrl').style.display = 'flex';
+}
+
+// switchTab 오버라이드 — 납부 탭 이탈 시 원래 UI 복구
+const _origSwitch = switchTab;
+window.switchTab = function(s) {
+  if (s !== '납부내역') hidePayTab();
+  curSheet = s; buildTabs(); renderAll();
+};
+
+// ── PAYMENT MODAL (업체 클릭 시) ────────────────────────────
+function openPayModal(biz, rows) {
+  // 렌탈현황에서 해당 업체 정보 찾기
+  const rentalInfo = allData.find(r => r.업체 === biz || r.업체.startsWith(biz));
+
+  let infoHtml = '';
+  if (rentalInfo) {
+    const mCharge = rentalInfo.부가==='별' ? Math.round(rentalInfo.금액*1.1*10000) : rentalInfo.금액*10000;
+    const vatLabel = rentalInfo.부가==='별'?`월 ${rentalInfo.금액}만원 (부가세 별도)`:rentalInfo.부가==='포'?`월 ${rentalInfo.금액}만원 (부가세 포함)`:`월 ${rentalInfo.금액}만원 (현금)`;
+    infoHtml = `
+      <div class="ph-info">
+        <div class="ph-info-item"><span class="ph-info-key">업체명</span><span class="ph-info-val">${biz}</span></div>
+        <div class="ph-info-item"><span class="ph-info-key">연락처</span><span class="ph-info-val">${rentalInfo.연락처.split(/[\/\s]/)[0]}</span></div>
+        <div class="ph-info-item"><span class="ph-info-key">렌탈 시작일</span><span class="ph-info-val">${fmtD(parseDate(rentalInfo.렌탈일))}</span></div>
+        <div class="ph-info-item"><span class="ph-info-key">렌탈료</span><span class="ph-info-val">${vatLabel}</span></div>
+        <div class="ph-info-item"><span class="ph-info-key">현재 결제현황</span><span class="ph-info-val">${rentalInfo.결제||'—'}</span></div>
+      </div>`;
+  } else {
+    infoHtml = `<div class="ph-info"><div class="ph-info-item"><span class="ph-info-key">업체명</span><span class="ph-info-val">${biz}</span></div></div>`;
+  }
+
+  // 납부내역 테이블
+  const sorted = [...rows].sort((a,b)=>a.해당월.localeCompare(b.해당월));
+  const total  = sorted.reduce((s,r)=>s+(parseFloat(r.금액)||0)*10000,0);
+
+  const tableHtml = `
+    <div class="ph-tbl-wrap">
+      <table class="ph-tbl">
+        <thead><tr>
+          <th style="width:36px">#</th>
+          <th style="width:120px">납부일</th>
+          <th style="width:100px">해당 월</th>
+          <th style="width:120px">금액</th>
+          <th>메모</th>
+        </tr></thead>
+        <tbody>
+          ${sorted.map((r,i)=>`
+            <tr>
+              <td style="text-align:center;color:var(--gray-400);font-size:12px">${i+1}</td>
+              <td>${r.납부일||'—'}</td>
+              <td style="font-weight:600">${r.해당월||'—'}</td>
+              <td style="font-weight:600;color:var(--teal-600)">${r.금액?comma(parseFloat(r.금액)*10000)+'원':'—'}</td>
+              <td style="color:var(--gray-600);font-size:12px">${r.메모||''}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="ph-summary">
+      <span class="ph-sum-left">총 ${sorted.length}건 납부</span>
+      <span class="ph-sum-right">합계 ${comma(total)}원</span>
+    </div>`;
+
+  document.getElementById('phInfo').innerHTML = infoHtml;
+  document.getElementById('phTbody').innerHTML = '';
+
+  // ph-modal 내용 교체
+  const modal = document.querySelector('.ph-modal');
+  modal.querySelector('.ph-hd h2').textContent = `📋 ${biz} 납부내역`;
+  document.querySelector('.ph-body').innerHTML = tableHtml;
+  document.getElementById('phNote').textContent = '※ 납부내역 수정은 구글 시트 "납부" 탭에서 직접 수정해주세요.';
+
+  // 복사 버튼 동작 재설정
+  document.querySelector('.btn-copy-hist').onclick = function() { copyPayModalHist(biz, sorted, total); };
+  document.querySelector('.btn-save-hist').style.display = 'none';
+
+  document.getElementById('phBackdrop').className = 'ph-backdrop open';
+}
+
+function copyPayModalHist(biz, rows, total) {
+  const lines = [];
+  lines.push('[납부내역 확인서]');
+  lines.push('업체명: ' + biz);
+  lines.push('기준일: ' + fmtD2(TODAY));
+  lines.push('');
+  lines.push('납부일          해당월      금액');
+  lines.push('─────────────────────────────');
+  rows.forEach(function(r) {
+    const date  = (r.납부일||'—').padEnd(14);
+    const month = (r.해당월||'—').padEnd(10);
+    const amt   = r.금액 ? comma(parseFloat(r.금액)*10000)+'원' : '—';
+    const memo  = r.메모 ? ' (' + r.메모 + ')' : '';
+    lines.push(date + month + amt + memo);
+  });
+  lines.push('─────────────────────────────');
+  lines.push('합계: ' + comma(total) + '원 (' + rows.length + '건)');
+  navigator.clipboard.writeText(lines.join('\n')).then(function(){showToast('📄 납부내역이 복사됐습니다!');});
+}
+
+// 업체 row에서 납부내역 바로 보기 (렌탈현황 목록에서)
+function openPayFromTable(idx) {
+  const r = window._rows[idx];
+  const biz = r.업체;
+  const matched = payData.filter(p => p.업체명 === biz);
+  if (matched.length === 0) {
+    showToast('납부 시트에 해당 업체 내역이 없습니다.');
+    return;
+  }
+  openPayModal(biz, matched);
+}
 
 // INIT
 if(getSavedUrl()) startApp();
